@@ -41,7 +41,7 @@ export function DetailPanel({
   return (
     <aside
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-[var(--color-shadow)]",
+        "relative flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-[var(--color-shadow)]",
         className,
       )}
       {...props}
@@ -50,7 +50,7 @@ export function DetailPanel({
         className={cn("absolute inset-y-0 left-0 w-1", toneAccentClass(tone))}
       />
 
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-5 py-4">
+      <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -67,7 +67,7 @@ export function DetailPanel({
         </div>
       </header>
 
-      <div className="px-5">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5">{children}</div>
     </aside>
   );
 }

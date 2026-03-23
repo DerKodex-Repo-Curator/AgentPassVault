@@ -224,7 +224,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -248,8 +248,8 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
         </Toast>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-        <Card className="min-h-[720px]">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)] xl:overflow-hidden">
+        <Card className="flex min-h-[720px] flex-col overflow-hidden xl:h-full xl:min-h-0">
           <div className="mb-3">
             <p className="max-w-[28rem] text-xs text-[var(--color-text-muted)]">
               Select a request to inspect details in place.
@@ -273,7 +273,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {filteredRequests.map((request) => {
               const isSelected = request.id === selectedRequest?.id;
 
@@ -333,7 +333,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
           </div>
         </Card>
 
-        <div className="xl:pl-2">
+        <div className="xl:min-h-0 xl:pl-2">
           {selectedRequest ? (
             <DetailPanel
               tone="requests"
@@ -349,7 +349,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   {selectedRequest.status}
                 </Badge>
               }
-              className="min-h-[720px]"
+              className="min-h-[720px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -469,7 +469,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                 <h2 className="text-lg font-semibold">No request selected</h2>
               }
               description="The detail panel stays empty until there is a visible request in the queue."
-              className="min-h-[720px]"
+              className="min-h-[720px] xl:h-full xl:min-h-0"
             />
           )}
         </div>

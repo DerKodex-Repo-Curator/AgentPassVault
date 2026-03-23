@@ -189,7 +189,7 @@ export function AgentsPage() {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -213,8 +213,8 @@ export function AgentsPage() {
         </Toast>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.95fr)]">
-        <Card className="min-h-[680px]">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.95fr)] xl:overflow-hidden">
+        <Card className="flex min-h-[680px] flex-col overflow-hidden xl:h-full xl:min-h-0">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs text-[var(--color-text-muted)]">
               Select an agent to inspect key registration and lease posture.
@@ -238,7 +238,7 @@ export function AgentsPage() {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {filteredAgents.map((agent) => {
               const isSelected = agent.id === selectedAgent?.id;
               return (
@@ -284,7 +284,7 @@ export function AgentsPage() {
           </div>
         </Card>
 
-        <div className="xl:pl-2">
+        <div className="xl:min-h-0 xl:pl-2">
           {selectedAgent ? (
             <DetailPanel
               tone="agents"
@@ -302,7 +302,7 @@ export function AgentsPage() {
                   {selectedAgent.risk}
                 </Badge>
               }
-              className="min-h-[680px]"
+              className="min-h-[680px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -403,7 +403,7 @@ export function AgentsPage() {
                 <h2 className="text-lg font-semibold">No agent selected</h2>
               }
               description="Choose an agent from the inventory to inspect registration, lease exposure, and available actions."
-              className="min-h-[680px]"
+              className="min-h-[680px] xl:h-full xl:min-h-0"
             />
           )}
         </div>

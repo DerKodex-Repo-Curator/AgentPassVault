@@ -49,7 +49,7 @@ export function AuditLogPage() {
   }, [filter, query]);
 
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
       <header className="flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
@@ -76,6 +76,7 @@ export function AuditLogPage() {
       <Card
         title="Timeline"
         description="Audit Log remains a dense operational history rather than a dashboard."
+        className="flex min-h-[720px] flex-col overflow-hidden xl:min-h-0 xl:flex-1"
         actions={
           <Tabs
             tabs={FILTER_TABS}
@@ -93,7 +94,7 @@ export function AuditLogPage() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {items.map((event) => (
             <div
               key={event.id}

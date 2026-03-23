@@ -144,9 +144,9 @@ export function AppShell({
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-app-bg)] text-[var(--color-text)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[color:color-mix(in_srgb,var(--color-shell)_86%,transparent)] backdrop-blur-xl">
-        <div className="flex h-16 items-center justify-between px-5">
+    <div className="flex min-h-screen flex-col bg-[var(--color-app-bg)] text-[var(--color-text)] xl:h-dvh xl:overflow-hidden">
+      <header className="z-30 shrink-0 border-b border-[var(--color-border)] bg-[color:color-mix(in_srgb,var(--color-shell)_86%,transparent)] backdrop-blur-xl">
+        <div className="flex h-[var(--layout-topbar-height)] items-center justify-between px-5">
           <button
             type="button"
             onClick={() => onNavigate("/requests")}
@@ -248,8 +248,8 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="flex min-h-[calc(100vh-4rem)]">
-        <aside className="flex w-[var(--layout-sidebar-width)] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-shell)]">
+      <div className="flex flex-1 min-h-0 flex-col xl:flex-row xl:overflow-hidden">
+        <aside className="flex shrink-0 flex-col border-b border-[var(--color-border)] bg-[var(--color-shell)] xl:h-full xl:w-[var(--layout-sidebar-width)] xl:overflow-y-auto xl:border-b-0 xl:border-r">
           <nav className="flex-1 space-y-1 px-2.5 py-4">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
@@ -274,7 +274,9 @@ export function AppShell({
           </nav>
         </aside>
 
-        <main className="min-w-0 flex-1 px-5 py-5">{children}</main>
+        <main className="min-w-0 flex-1 px-5 py-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -343,7 +343,7 @@ export function SecretsPage({
   }
 
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -372,8 +372,8 @@ export function SecretsPage({
         </Toast>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
-        <Card className="min-h-[720px]">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)] xl:overflow-hidden">
+        <Card className="flex min-h-[720px] flex-col overflow-hidden xl:h-full xl:min-h-0">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs text-[var(--color-text-muted)]">
               Quick reveal is available directly in the list.
@@ -397,7 +397,7 @@ export function SecretsPage({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {filteredSecrets.map((secret) => {
               const isSelected = secret.id === selectedSecret?.id;
               const isRevealed = Boolean(revealedIds[secret.id]);
@@ -466,7 +466,7 @@ export function SecretsPage({
           </div>
         </Card>
 
-        <div className="xl:pl-2">
+        <div className="xl:min-h-0 xl:pl-2">
           {selectedSecret ? (
             <DetailPanel
               tone="secrets"
@@ -480,7 +480,7 @@ export function SecretsPage({
               actions={
                 <Badge tone="neutral">{selectedSecret.environment}</Badge>
               }
-              className="min-h-[720px]"
+              className="min-h-[720px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -577,7 +577,7 @@ export function SecretsPage({
                 <h2 className="text-lg font-semibold">No secret selected</h2>
               }
               description="The detail pane will remain empty until a visible secret is selected."
-              className="min-h-[720px]"
+              className="min-h-[720px] xl:h-full xl:min-h-0"
             />
           )}
         </div>
