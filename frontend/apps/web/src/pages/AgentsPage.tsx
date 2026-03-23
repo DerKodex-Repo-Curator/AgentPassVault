@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import type { AgentResponse } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
 import {
@@ -51,6 +52,14 @@ export function AgentsPage() {
   const [loading, setLoading] = useState(!env.apiMockingEnabled);
   const [error, setError] = useState<string | null>(null);
   const [revokeOpen, setRevokeOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [newAgentName, setNewAgentName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createdAgentCredentials, setCreatedAgentCredentials] = useState<{
+    agentId: string;
+    appToken: string;
+  } | null>(null);
 
   useEffect(() => {
     if (env.apiMockingEnabled) {
@@ -118,31 +127,82 @@ export function AgentsPage() {
     filteredAgents[0] ??
     null;
 
+  const resetCreateAgentForm = () => {
+    setNewAgentName("");
+    setCreateError(null);
+    setCreateSubmitting(false);
+  };
+
+  const handleCreateAgent = async () => {
+    const trimmedName = newAgentName.trim();
+    if (!trimmedName) {
+      setCreateError("Agent name is required.");
+      return;
+    }
+
+    setCreateSubmitting(true);
+    setCreateError(null);
+    const createdAt = new Date().toISOString();
+
+    let agentId = `agent-manual-${Date.now()}`;
+    let appToken = `mock-app-token-${Math.random().toString(36).slice(2, 10)}`;
+
+    if (!env.apiMockingEnabled) {
+      const result = await appApiClient.createAgent({ name: trimmedName });
+      if (!result.ok || !result.data.agentId || !result.data.appToken) {
+        setCreateError(
+          result.ok
+            ? "Agent was created without returning credentials."
+            : result.error.message,
+        );
+        setCreateSubmitting(false);
+        return;
+      }
+
+      agentId = result.data.agentId;
+      appToken = result.data.appToken;
+    }
+
+    const createdAgent: MockupAgent = {
+      id: agentId,
+      name: trimmedName,
+      displayName: trimmedName,
+      environment: "shared",
+      publicKeyState: "No key registered",
+      keyFingerprint: "Pending registration",
+      lastActivityAt: createdAt,
+      activeLeases: 0,
+      linkedSecrets: [],
+      note: "Newly created agent. Public key registration is still required.",
+      risk: "attention",
+    };
+
+    setAgents((current) => [createdAgent, ...current]);
+    setSelectedId(createdAgent.id);
+    setCreatedAgentCredentials({ agentId, appToken });
+    setCreateOpen(false);
+    resetCreateAgentForm();
+  };
+
   if (loading) {
     return <Toast title="Agents">Loading agents...</Toast>;
   }
 
   return (
     <section className="space-y-4">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-agents-text)]">
-            Agents
-          </p>
-          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-            Inspect machine identity, key posture, and lease exposure together.
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
-            Agents stay in the primary navigation because registration state and
-            lease dependency are daily operational concerns.
-          </p>
-        </div>
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-agents-text)]">
-            Registered agents
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-domain-agents-text)]">
-            {agents.length}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-agents-text)]">
+              Agents
+            </p>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-agents-text)]">
+              Registered {agents.length}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Identity state, key posture, and lease exposure stay available in
+            one operational view.
           </p>
         </div>
       </header>
@@ -154,11 +214,21 @@ export function AgentsPage() {
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.95fr)]">
-        <Card
-          title="Inventory"
-          description="Select an agent to inspect key registration and lease posture."
-          className="min-h-[680px]"
-        >
+        <Card className="min-h-[680px]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Select an agent to inspect key registration and lease posture.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              startIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setCreateOpen(true)}
+            >
+              Create Agent
+            </Button>
+          </div>
+
           <div className="mb-4">
             <Input
               label="Search agents"
@@ -351,6 +421,58 @@ export function AgentsPage() {
           implementation should explain which leases and secrets are affected
           before revocation.
         </p>
+      </Modal>
+
+      <Modal
+        open={createOpen}
+        title="Create Agent"
+        confirmLabel={createSubmitting ? "Creating..." : "Create Agent"}
+        onClose={() => {
+          setCreateOpen(false);
+          resetCreateAgentForm();
+        }}
+        onConfirm={createSubmitting ? undefined : handleCreateAgent}
+      >
+        <Input
+          label="Agent name"
+          value={newAgentName}
+          onChange={(event) => setNewAgentName(event.target.value)}
+          error={createError ?? undefined}
+          placeholder="release-bot"
+        />
+      </Modal>
+
+      <Modal
+        open={Boolean(createdAgentCredentials)}
+        title="Agent credentials"
+        cancelLabel="Close"
+        onClose={() => setCreatedAgentCredentials(null)}
+      >
+        {createdAgentCredentials ? (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Store this app token now. It may not be shown again.
+            </p>
+            <dl className="grid gap-3 text-sm">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                  Agent ID
+                </dt>
+                <dd className="mt-1 font-mono text-[var(--color-text)]">
+                  {createdAgentCredentials.agentId}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                  App token
+                </dt>
+                <dd className="mt-1 overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-3 font-mono text-xs text-[var(--color-text)]">
+                  {createdAgentCredentials.appToken}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        ) : null}
       </Modal>
     </section>
   );

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { SecretsPage } from "./SecretsPage";
@@ -28,10 +28,9 @@ describe("SecretsPage component", () => {
       />,
     );
 
+    expect(screen.getByText("Secrets")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", {
-        name: "Inspect protected assets without losing operational context.",
-      }),
+      screen.getByRole("button", { name: "Create Secret" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("AWS Deploy Key")).toHaveLength(2);
     expect(screen.getByText("Value preview")).toBeInTheDocument();
@@ -70,5 +69,37 @@ describe("SecretsPage component", () => {
     expect(
       screen.getByRole("button", { name: "Hide value" }),
     ).toBeInTheDocument();
+  });
+
+  it("creates a secret in mocked mode", async () => {
+    render(
+      <SecretsPage
+        isVaultLocked={false}
+        masterKeys={{} as never}
+        onOpenSecret={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Secret" }),
+    );
+    await userEvent.type(screen.getByLabelText("Secret name"), "Manual Secret");
+    await userEvent.type(
+      screen.getByLabelText("Plaintext secret value"),
+      "super-secret-value",
+    );
+    const metadataField = screen.getAllByRole("textbox")[3];
+    fireEvent.change(metadataField, {
+      target: {
+        value: '{"service":"manual","environment":"prod","owner":"Ops"}',
+      },
+    });
+
+    await userEvent.click(
+      screen.getAllByRole("button", { name: "Create Secret" })[1],
+    );
+
+    expect(screen.getAllByText("Manual Secret")).toHaveLength(2);
+    expect(screen.getByText("Secret created.")).toBeInTheDocument();
   });
 });

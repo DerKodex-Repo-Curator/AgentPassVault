@@ -225,25 +225,19 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
 
   return (
     <section className="space-y-4">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-requests-text)]">
-            Requests
-          </p>
-          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-            Review the pending work queue first.
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
-            The inbox defaults to pending requests so operators can inspect
-            context, metadata, and lease state before taking action.
-          </p>
-        </div>
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-requests-text)]">
-            Pending now
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-domain-requests-text)]">
-            {pendingCount}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-requests-text)]">
+              Requests
+            </p>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-requests-text)]">
+              Pending {pendingCount}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Review pending work first. Context, metadata, and lease state stay
+            visible before action.
           </p>
         </div>
       </header>
@@ -255,24 +249,27 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-        <Card
-          title="Inbox"
-          description="Select a request to inspect details in place."
-          className="min-h-[720px]"
-          actions={
+        <Card className="min-h-[720px]">
+          <div className="mb-3">
+            <p className="max-w-[28rem] text-xs text-[var(--color-text-muted)]">
+              Select a request to inspect details in place.
+            </p>
+          </div>
+
+          <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="min-w-0 flex-1">
+              <Input
+                label="Search requests"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by request, context, or agent"
+              />
+            </div>
+
             <Tabs
               tabs={FILTER_TABS}
               activeId={filter}
               onChange={(next) => setFilter(next as RequestFilter)}
-            />
-          }
-        >
-          <div className="mb-4">
-            <Input
-              label="Search requests"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by request, context, or agent"
             />
           </div>
 

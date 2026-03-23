@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import type { SecretDetailsResponse, MasterKeys } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
 import {
@@ -8,12 +9,16 @@ import {
   DetailPanel,
   DetailPanelSection,
   Input,
+  Modal,
+  Textarea,
   Toast,
 } from "../components/ui";
 import { readAppEnv } from "../config/env";
 import { formatDateTime, formatRelativeLabel } from "../mockup/format";
 import { type MockupSecret, mockupSecrets } from "../mockup/lofi-data";
+import { SecretCryptoAdapter } from "../security";
 import { useSessionStore } from "../state/session-store";
+import { createSecretSchema } from "../validation";
 
 interface SecretsPageProps {
   isVaultLocked: boolean;
@@ -69,6 +74,32 @@ function mapSecret(secret: SecretDetailsResponse): MockupSecret {
   };
 }
 
+function parseMetadataJson(raw: string): Record<string, string> {
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Metadata must be a JSON object.");
+  }
+
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value !== "string") {
+      throw new Error(`Metadata value for "${key}" must be a string.`);
+    }
+    normalized[key] = value;
+  }
+
+  return normalized;
+}
+
+function toApiMetadata(metadata: Record<string, string>): { [key: string]: object } {
+  const output: { [key: string]: object } = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    output[key] = { value };
+  }
+
+  return output;
+}
+
 export function SecretsPage({
   isVaultLocked,
   masterKeys,
@@ -87,6 +118,18 @@ export function SecretsPage({
   const [loading, setLoading] = useState(!env.apiMockingEnabled);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [newSecretName, setNewSecretName] = useState("");
+  const [newSecretPlaintext, setNewSecretPlaintext] = useState("");
+  const [newSecretMetadata, setNewSecretMetadata] = useState(
+    '{\n  "service": "",\n  "environment": "",\n  "owner": ""\n}',
+  );
+  const [createErrors, setCreateErrors] = useState<{
+    name?: string;
+    plaintextValue?: string;
+    metadata?: string;
+  }>({});
 
   useEffect(() => {
     if (env.apiMockingEnabled) {
@@ -174,31 +217,146 @@ export function SecretsPage({
     }));
   };
 
+  const resetCreateForm = () => {
+    setNewSecretName("");
+    setNewSecretPlaintext("");
+    setNewSecretMetadata(
+      '{\n  "service": "",\n  "environment": "",\n  "owner": ""\n}',
+    );
+    setCreateErrors({});
+    setCreateSubmitting(false);
+  };
+
+  const handleCreateSecret = async () => {
+    if (isVaultLocked || !masterKeys) {
+      setNotice("Vault is locked. Unlock before creating secrets.");
+      return;
+    }
+
+    let metadata: Record<string, string>;
+    try {
+      metadata = parseMetadataJson(newSecretMetadata);
+    } catch (metadataError) {
+      setCreateErrors({
+        metadata:
+          metadataError instanceof Error
+            ? metadataError.message
+            : "Metadata must be valid JSON.",
+      });
+      return;
+    }
+
+    const parsed = createSecretSchema.safeParse({
+      name: newSecretName,
+      plaintextValue: newSecretPlaintext,
+      metadata,
+    });
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setCreateErrors({
+        name: fieldErrors.name?.[0],
+        plaintextValue: fieldErrors.plaintextValue?.[0],
+        metadata: fieldErrors.metadata?.[0],
+      });
+      return;
+    }
+
+    setCreateSubmitting(true);
+    setCreateErrors({});
+    const createdAt = new Date().toISOString();
+
+    if (env.apiMockingEnabled) {
+      const createdSecret: MockupSecret = {
+        id: `sec-manual-${Date.now()}`,
+        name: parsed.data.name,
+        service: metadata.service || "manual",
+        environment: metadata.environment || "shared",
+        owner: metadata.owner || "Unassigned",
+        updatedAt: createdAt,
+        revealedValue: parsed.data.plaintextValue,
+        metadata,
+        leaseCount: 0,
+        activeAgents: [],
+        note: "Created manually by an operator.",
+      };
+
+      setSecrets((current) => [createdSecret, ...current]);
+      setSelectedId(createdSecret.id);
+      setNotice("Secret created.");
+      setCreateOpen(false);
+      resetCreateForm();
+      return;
+    }
+
+    try {
+      const encrypted = await SecretCryptoAdapter.encryptPlaintextSecret(
+        parsed.data,
+        masterKeys,
+      );
+      const result = await appApiClient.createSecret({
+        ...encrypted,
+        metadata: toApiMetadata(encrypted.metadata),
+      });
+      if (!result.ok || !result.data.secretId) {
+        setCreateErrors({
+          metadata: result.ok
+            ? "Secret was created without a secret id."
+            : result.error.message,
+        });
+        setCreateSubmitting(false);
+        return;
+      }
+
+      const createdSecret: MockupSecret = {
+        id: result.data.secretId,
+        name: encrypted.name,
+        service: metadata.service || "manual",
+        environment: metadata.environment || "shared",
+        owner: metadata.owner || "Unassigned",
+        updatedAt: createdAt,
+        revealedValue: parsed.data.plaintextValue,
+        metadata,
+        leaseCount: 0,
+        activeAgents: [],
+        note: "Created manually by an operator.",
+      };
+
+      setSecrets((current) => [createdSecret, ...current]);
+      setSelectedId(createdSecret.id);
+      setNotice("Secret created.");
+      setCreateOpen(false);
+      resetCreateForm();
+    } catch (createError) {
+      setCreateErrors({
+        metadata:
+          createError instanceof Error
+            ? createError.message
+            : "Secret creation failed.",
+      });
+      setCreateSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <Toast title="Secrets">Loading secrets...</Toast>;
   }
 
   return (
     <section className="space-y-4">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-secrets-text)]">
-            Secrets
-          </p>
-          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-            Inspect protected assets without losing operational context.
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
-            Secret values can be inspected quickly, while metadata, lease
-            exposure, and ownership stay visible in the detail pane.
-          </p>
-        </div>
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-secrets-text)]">
-            Stored secrets
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-domain-secrets-text)]">
-            {secrets.length}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-secrets-text)]">
+              Secrets
+            </p>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-secrets-text)]">
+              Stored {secrets.length}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Inspect values quickly while ownership, metadata, and lease exposure
+            remain visible.
           </p>
         </div>
       </header>
@@ -215,11 +373,21 @@ export function SecretsPage({
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
-        <Card
-          title="Catalog"
-          description="Quick reveal is available directly in the list."
-          className="min-h-[720px]"
-        >
+        <Card className="min-h-[720px]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Quick reveal is available directly in the list.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              startIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setCreateOpen(true)}
+            >
+              Create Secret
+            </Button>
+          </div>
+
           <div className="mb-4">
             <Input
               label="Search secrets"
@@ -414,6 +582,42 @@ export function SecretsPage({
           )}
         </div>
       </div>
+
+      <Modal
+        open={createOpen}
+        title="Create Secret"
+        confirmLabel={createSubmitting ? "Creating..." : "Create Secret"}
+        onClose={() => {
+          setCreateOpen(false);
+          resetCreateForm();
+        }}
+        onConfirm={createSubmitting ? undefined : handleCreateSecret}
+      >
+        <div className="space-y-4">
+          <Input
+            label="Secret name"
+            value={newSecretName}
+            onChange={(event) => setNewSecretName(event.target.value)}
+            error={createErrors.name}
+            placeholder="GitHub Release Token"
+          />
+          <Textarea
+            label="Plaintext secret value"
+            value={newSecretPlaintext}
+            onChange={(event) => setNewSecretPlaintext(event.target.value)}
+            error={createErrors.plaintextValue}
+            placeholder="Paste the secret value"
+          />
+          <Textarea
+            label="Metadata JSON"
+            value={newSecretMetadata}
+            onChange={(event) => setNewSecretMetadata(event.target.value)}
+            error={createErrors.metadata}
+            hint='Example: {"service":"github","environment":"prod","owner":"Release Engineering"}'
+            className="min-h-32 font-mono text-xs"
+          />
+        </div>
+      </Modal>
     </section>
   );
 }
