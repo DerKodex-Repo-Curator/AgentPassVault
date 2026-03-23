@@ -128,7 +128,7 @@ export function AgentsPage() {
             lease dependency are daily operational concerns.
           </p>
         </div>
-        <div className="rounded-[16px] border border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] px-4 py-3 text-right">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-agents-text)]">
             Registered agents
           </p>
@@ -167,7 +167,7 @@ export function AgentsPage() {
                   key={agent.id}
                   type="button"
                   onClick={() => setSelectedId(agent.id)}
-                  className={`w-full rounded-[16px] border p-4 text-left transition ${
+                  className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
                       ? "border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"

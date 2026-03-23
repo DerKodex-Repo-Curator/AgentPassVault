@@ -7,7 +7,7 @@ interface TableProps {
 
 export function Table({ headers, rows }: TableProps) {
   return (
-    <div className="overflow-hidden rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--color-shadow)]">
+    <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--color-shadow)]">
       <table className="min-w-full divide-y divide-[var(--color-border)]">
         <thead className="bg-[var(--color-surface-subtle)]">
           <tr>

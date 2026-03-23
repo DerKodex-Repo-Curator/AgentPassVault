@@ -185,7 +185,7 @@ export function SecretsPage({
             exposure, and ownership stay visible in the detail pane.
           </p>
         </div>
-        <div className="rounded-[16px] border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-4 py-3 text-right">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-secrets-text)]">
             Stored secrets
           </p>
@@ -229,7 +229,7 @@ export function SecretsPage({
               return (
                 <div
                   key={secret.id}
-                  className={`rounded-[16px] border p-4 transition ${
+                  className={`rounded-[var(--radius-card)] border p-4 transition ${
                     isSelected
                       ? "border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)]"
@@ -274,7 +274,7 @@ export function SecretsPage({
                   </div>
 
                   {isRevealed ? (
-                    <pre className="mt-3 overflow-x-auto rounded-[12px] bg-[var(--color-surface-subtle)] p-3 text-xs leading-6 text-[var(--color-text)]">
+                    <pre className="mt-3 overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-3 text-xs leading-6 text-[var(--color-text)]">
                       {secret.revealedValue}
                     </pre>
                   ) : null}
@@ -283,7 +283,7 @@ export function SecretsPage({
             })}
 
             {filteredSecrets.length === 0 ? (
-              <div className="rounded-[16px] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
+              <div className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
                 No secrets match the current query.
               </div>
             ) : null}
@@ -324,7 +324,7 @@ export function SecretsPage({
                 title="Value preview"
                 description="Quick reveal should feel lightweight, not theatrical."
               >
-                <pre className="overflow-x-auto rounded-[14px] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
                   {revealedIds[selectedSecret.id]
                     ? selectedSecret.revealedValue
                     : "••••••••••••••••••••••••••••"}
@@ -351,7 +351,7 @@ export function SecretsPage({
                 title="Metadata"
                 description="Raw metadata remains readable and exact."
               >
-                <pre className="overflow-x-auto rounded-[14px] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
                   {JSON.stringify(selectedSecret.metadata, null, 2)}
                 </pre>
               </Card>

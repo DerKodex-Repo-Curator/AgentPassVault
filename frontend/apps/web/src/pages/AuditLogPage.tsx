@@ -63,7 +63,7 @@ export function AuditLogPage() {
             understand sequence, actor, target, and impact at a glance.
           </p>
         </div>
-        <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-right">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
             Visible events
           </p>
@@ -97,7 +97,7 @@ export function AuditLogPage() {
           {items.map((event) => (
             <div
               key={event.id}
-              className="grid gap-3 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-[180px_minmax(0,1fr)]"
+              className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-[180px_minmax(0,1fr)]"
             >
               <div className="text-xs text-[var(--color-text-subtle)]">
                 <p className="font-semibold uppercase tracking-[0.14em]">
@@ -129,7 +129,7 @@ export function AuditLogPage() {
           ))}
 
           {items.length === 0 ? (
-            <div className="rounded-[16px] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
+            <div className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
               No audit events match the current filter.
             </div>
           ) : null}

@@ -27,7 +27,7 @@ export function Toast({
   return (
     <div
       className={cn(
-        "rounded-[14px] border px-4 py-3 shadow-sm",
+        "rounded-[var(--radius-panel)] border px-4 py-3 shadow-sm",
         toneClass[tone],
       )}
     >

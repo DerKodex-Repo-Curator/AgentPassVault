@@ -236,7 +236,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
             context, metadata, and lease state before taking action.
           </p>
         </div>
-        <div className="rounded-[16px] border border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] px-4 py-3 text-right">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] px-4 py-3 text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-requests-text)]">
             Pending now
           </p>
@@ -283,7 +283,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   key={request.id}
                   type="button"
                   onClick={() => setSelectedId(request.id)}
-                  className={`w-full rounded-[16px] border p-4 text-left transition ${
+                  className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
                       ? "border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"
@@ -327,7 +327,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
             })}
 
             {filteredRequests.length === 0 ? (
-              <div className="rounded-[16px] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
+              <div className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
                 No requests match the current filter.
               </div>
             ) : null}
@@ -400,7 +400,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                 title="Metadata"
                 description="Raw request metadata remains visible for operator judgment."
               >
-                <pre className="overflow-x-auto rounded-[14px] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
                   {JSON.stringify(selectedRequest.metadata, null, 2)}
                 </pre>
               </Card>
@@ -448,7 +448,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   {selectedRequest.status === "pending" ? (
                     <a
                       href={`#/fulfill/${selectedRequest.id}`}
-                      className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-medium text-[var(--color-text)] shadow-sm transition hover:bg-[var(--color-surface-muted)]"
+                      className="inline-flex h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-medium text-[var(--color-text)] shadow-sm transition hover:bg-[var(--color-surface-muted)]"
                     >
                       {selectedRequest.type === "LEASE"
                         ? "Open lease review"
