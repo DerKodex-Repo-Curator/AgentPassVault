@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { CopyLinkButton } from "./CopyLinkButton";
 import { cn } from "../../lib/cn";
 
 type DetailPanelTone = "requests" | "secrets" | "agents";
@@ -9,6 +10,7 @@ interface DetailPanelProps extends HTMLAttributes<HTMLDivElement> {
   heading: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  copyLink?: string;
 }
 
 interface DetailPanelSectionProps extends HTMLAttributes<HTMLElement> {
@@ -27,6 +29,7 @@ export function DetailPanel({
   heading,
   description,
   actions,
+  copyLink,
   className,
   children,
   ...props
@@ -56,7 +59,10 @@ export function DetailPanel({
               </div>
             ) : null}
           </div>
-          {actions}
+          <div className="flex shrink-0 items-center gap-2">
+            {copyLink ? <CopyLinkButton link={copyLink} /> : null}
+            {actions}
+          </div>
         </div>
       </header>
 

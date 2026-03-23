@@ -7,9 +7,7 @@ import { DEFAULT_AUTH_ROUTE, ROUTES } from "./app/routes";
 import { LoginPage } from "./pages/LoginPage";
 import { AgentsPage } from "./pages/AgentsPage";
 import { AuditLogPage } from "./pages/AuditLogPage";
-import { RequestDetailPage } from "./pages/RequestDetailPage";
 import { RequestsPage } from "./pages/RequestsPage";
-import { SecretDetailPage } from "./pages/SecretDetailPage";
 import { SecretsPage } from "./pages/SecretsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { UiLabPage } from "./pages/UiLabPage";
@@ -241,12 +239,7 @@ function App() {
   }));
 
   const currentPath =
-    match.route === "request-detail"
-      ? "/requests"
-      : match.route === "secret-detail"
-        ? "/secrets"
-        : (ROUTES.find((route) => route.key === match.route)?.path ??
-          "/requests");
+    ROUTES.find((route) => route.key === match.route)?.path ?? "/requests";
 
   return (
     <AppShell
@@ -282,28 +275,7 @@ function App() {
       {match.route === "requests" ? (
         <RequestsPage
           key={`requests-${pageStateKey}`}
-          onOpenRequest={(requestId) => navigate(`/requests/${requestId}`)}
-        />
-      ) : null}
-      {match.route === "request-detail" ? (
-        <RequestDetailPage
-          key={`request-detail-${match.params.requestId ?? "unknown"}-${pageStateKey}`}
-          requestId={match.params.requestId ?? ""}
-          onBack={() => navigate("/requests")}
-          isVaultLocked={isLocked}
-          masterKeys={masterKeys}
-          onNotify={(message, tone = "info") => {
-            setNotice({ message, tone });
-          }}
-        />
-      ) : null}
-      {match.route === "secret-detail" ? (
-        <SecretDetailPage
-          key={`secret-detail-${match.params.secretId ?? "unknown"}-${pageStateKey}`}
-          secretId={match.params.secretId ?? ""}
-          isVaultLocked={isLocked}
-          masterKeys={masterKeys}
-          onBack={() => navigate("/secrets")}
+          initialSelectedRequestId={match.params.request ?? null}
         />
       ) : null}
       {match.route === "secrets" ? (
@@ -311,10 +283,16 @@ function App() {
           key={`secrets-${pageStateKey}`}
           isVaultLocked={isLocked}
           masterKeys={masterKeys}
-          onOpenSecret={(secretId) => navigate(`/secrets/${secretId}`)}
+          initialSelectedSecretId={match.params.secret ?? null}
+          initialSelectedSecretName={match.params.secretName ?? null}
         />
       ) : null}
-      {match.route === "agents" ? <AgentsPage /> : null}
+      {match.route === "agents" ? (
+        <AgentsPage
+          initialSelectedAgentId={match.params.agent ?? null}
+          initialSelectedAgentName={match.params.agentName ?? null}
+        />
+      ) : null}
       {match.route === "audit-log" ? <AuditLogPage /> : null}
       {match.route === "settings" ? <SettingsPage /> : null}
       {match.route === "ui-lab" && env.apiMockingEnabled ? <UiLabPage /> : null}

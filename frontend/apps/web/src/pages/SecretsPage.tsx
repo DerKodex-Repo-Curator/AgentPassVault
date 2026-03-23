@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import type { SecretDetailsResponse, MasterKeys } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
@@ -24,7 +24,8 @@ import { createSecretSchema } from "../validation";
 interface SecretsPageProps {
   isVaultLocked: boolean;
   masterKeys: MasterKeys | null;
-  onOpenSecret: (secretId: string) => void;
+  initialSelectedSecretId?: string | null;
+  initialSelectedSecretName?: string | null;
 }
 
 function normalizeMetadata(
@@ -104,7 +105,8 @@ function toApiMetadata(metadata: Record<string, string>): { [key: string]: objec
 export function SecretsPage({
   isVaultLocked,
   masterKeys,
-  onOpenSecret,
+  initialSelectedSecretId = null,
+  initialSelectedSecretName = null,
 }: SecretsPageProps) {
   const env = readAppEnv();
   const { accessToken } = useSessionStore();
@@ -131,6 +133,7 @@ export function SecretsPage({
     plaintextValue?: string;
     metadata?: string;
   }>({});
+  const lastAppliedSelectionRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (env.apiMockingEnabled) {
@@ -199,6 +202,38 @@ export function SecretsPage({
       setSelectedId(filteredSecrets[0]?.id ?? null);
     }
   }, [filteredSecrets, selectedId]);
+
+  useEffect(() => {
+    if (!initialSelectedSecretId && !initialSelectedSecretName) {
+      return;
+    }
+
+    const selectionKey = `${initialSelectedSecretId ?? ""}|${initialSelectedSecretName ?? ""}`;
+    if (lastAppliedSelectionRef.current === selectionKey) {
+      return;
+    }
+
+    const matchedSecret = secrets.find((secret) => {
+      if (initialSelectedSecretId && secret.id === initialSelectedSecretId) {
+        return true;
+      }
+
+      return Boolean(
+        initialSelectedSecretName &&
+          secret.name.toLowerCase() === initialSelectedSecretName.toLowerCase(),
+      );
+    });
+
+    lastAppliedSelectionRef.current = selectionKey;
+    if (matchedSecret && matchedSecret.id !== selectedId) {
+      setSelectedId(matchedSecret.id);
+    }
+  }, [
+    secrets,
+    initialSelectedSecretId,
+    initialSelectedSecretName,
+    selectedId,
+  ]);
 
   const selectedSecret =
     filteredSecrets.find((secret) => secret.id === selectedId) ??
@@ -481,6 +516,7 @@ export function SecretsPage({
               actions={
                 <Badge tone="neutral">{selectedSecret.environment}</Badge>
               }
+              copyLink={`#/secrets?secret=${encodeURIComponent(selectedSecret.id)}`}
               className="min-h-[720px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
@@ -519,12 +555,6 @@ export function SecretsPage({
                       ? "Hide value"
                       : "Reveal value"}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => onOpenSecret(selectedSecret.id)}
-                  >
-                    Open detail
-                  </Button>
                 </div>
               </DetailPanelSection>
 
@@ -547,7 +577,11 @@ export function SecretsPage({
                         </dt>
                         <dd className="mt-2 flex flex-wrap gap-2">
                           {selectedSecret.activeAgents.map((agent) => (
-                            <EntityBadge key={agent} kind="agent">
+                            <EntityBadge
+                              key={agent}
+                              kind="agent"
+                              href={`#/agents?agentName=${encodeURIComponent(agent)}`}
+                            >
                               {agent}
                             </EntityBadge>
                           ))}

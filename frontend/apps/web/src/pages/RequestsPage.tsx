@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RequestResponse } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
 import {
@@ -19,7 +19,7 @@ import { type MockupRequest, mockupRequests } from "../mockup/lofi-data";
 import { useSessionStore } from "../state/session-store";
 
 interface RequestsPageProps {
-  onOpenRequest: (requestId: string) => void;
+  initialSelectedRequestId?: string | null;
 }
 
 type RequestFilter = "pending" | "resolved" | "all";
@@ -111,7 +111,9 @@ function toMockupRequest(
   };
 }
 
-export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
+export function RequestsPage({
+  initialSelectedRequestId = null,
+}: RequestsPageProps) {
   const env = readAppEnv();
   const { accessToken } = useSessionStore();
   const [requests, setRequests] = useState<MockupRequest[]>(
@@ -124,6 +126,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     mockupRequests[0]?.id ?? null,
   );
+  const lastAppliedSelectionRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (env.apiMockingEnabled) {
@@ -211,6 +214,24 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
       setSelectedId(filteredRequests[0]?.id ?? null);
     }
   }, [filteredRequests, selectedId]);
+
+  useEffect(() => {
+    if (!initialSelectedRequestId) {
+      return;
+    }
+
+    if (lastAppliedSelectionRef.current === initialSelectedRequestId) {
+      return;
+    }
+
+    lastAppliedSelectionRef.current = initialSelectedRequestId;
+    const matchedRequest = requests.find(
+      (request) => request.id === initialSelectedRequestId,
+    );
+    if (matchedRequest && matchedRequest.id !== selectedId) {
+      setSelectedId(matchedRequest.id);
+    }
+  }, [initialSelectedRequestId, requests, selectedId]);
 
   const selectedRequest =
     filteredRequests.find((request) => request.id === selectedId) ??
@@ -316,7 +337,11 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
 
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <EntityBadge kind="agent" className="max-w-full">
+                      <EntityBadge
+                        kind="agent"
+                        className="max-w-full"
+                        href={`#/agents?agent=${encodeURIComponent(request.agentId)}&agentName=${encodeURIComponent(request.agentName)}`}
+                      >
                         {request.agentName}
                       </EntityBadge>
                     </div>
@@ -352,6 +377,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   {selectedRequest.status}
                 </Badge>
               }
+              copyLink={`#/requests?request=${encodeURIComponent(selectedRequest.id)}`}
               className="min-h-[720px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
@@ -361,7 +387,10 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                       Agent
                     </p>
                     <div className="mt-2">
-                      <EntityBadge kind="agent">
+                      <EntityBadge
+                        kind="agent"
+                        href={`#/agents?agent=${encodeURIComponent(selectedRequest.agentId)}&agentName=${encodeURIComponent(selectedRequest.agentName)}`}
+                      >
                         {selectedRequest.agentName}
                       </EntityBadge>
                     </div>
@@ -417,7 +446,14 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                         </dt>
                         <dd>
                           {selectedRequest.linkedSecretName ? (
-                            <EntityBadge kind="secret">
+                            <EntityBadge
+                              kind="secret"
+                              href={
+                                selectedRequest.linkedSecretId
+                                  ? `#/secrets?secret=${encodeURIComponent(selectedRequest.linkedSecretId)}`
+                                  : `#/secrets?secretName=${encodeURIComponent(selectedRequest.linkedSecretName)}`
+                              }
+                            >
                               {selectedRequest.linkedSecretName}
                             </EntityBadge>
                           ) : (
@@ -456,9 +492,6 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
 
               <DetailPanelSection heading="Actions">
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={() => onOpenRequest(selectedRequest.id)}>
-                    Open detail
-                  </Button>
                   {selectedRequest.status === "pending" ? (
                     <a
                       href={`#/fulfill/${selectedRequest.id}`}

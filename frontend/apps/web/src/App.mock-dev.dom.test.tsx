@@ -88,14 +88,6 @@ vi.mock("./pages/AuditLogPage", () => ({
   AuditLogPage: () => <div>Audit Log</div>,
 }));
 
-vi.mock("./pages/RequestDetailPage", () => ({
-  RequestDetailPage: () => <div>Request Detail</div>,
-}));
-
-vi.mock("./pages/SecretDetailPage", () => ({
-  SecretDetailPage: () => <div>Secret Detail</div>,
-}));
-
 vi.mock("./pages/SecretsPage", () => ({
   SecretsPage: () => <div>Secrets</div>,
 }));

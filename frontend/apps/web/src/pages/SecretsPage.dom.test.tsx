@@ -24,7 +24,6 @@ describe("SecretsPage component", () => {
       <SecretsPage
         isVaultLocked={false}
         masterKeys={{} as never}
-        onOpenSecret={vi.fn()}
       />,
     );
 
@@ -41,7 +40,6 @@ describe("SecretsPage component", () => {
       <SecretsPage
         isVaultLocked={true}
         masterKeys={null}
-        onOpenSecret={vi.fn()}
       />,
     );
 
@@ -59,7 +57,6 @@ describe("SecretsPage component", () => {
       <SecretsPage
         isVaultLocked={false}
         masterKeys={{} as never}
-        onOpenSecret={vi.fn()}
       />,
     );
 
@@ -76,7 +73,6 @@ describe("SecretsPage component", () => {
       <SecretsPage
         isVaultLocked={false}
         masterKeys={{} as never}
-        onOpenSecret={vi.fn()}
       />,
     );
 

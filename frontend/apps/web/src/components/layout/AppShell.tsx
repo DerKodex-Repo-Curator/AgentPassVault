@@ -139,11 +139,8 @@ export function AppShell({
           <button
             type="button"
             onClick={() => onNavigate("/requests")}
-            className="inline-flex shrink-0 items-center gap-3 rounded-[var(--radius-control)] px-2 py-1.5 text-left transition hover:bg-[var(--color-surface-subtle)]"
+            className="inline-flex shrink-0 items-center rounded-[var(--radius-control)] px-2 py-1.5 text-left transition hover:bg-[var(--color-surface-subtle)]"
           >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-text)] text-[var(--color-shell)]">
-              <Shield className="h-4 w-4" />
-            </span>
             <span className="flex flex-col">
               <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
                 AgentPassVault

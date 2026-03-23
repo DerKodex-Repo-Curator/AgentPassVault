@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import type { AgentResponse } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
@@ -40,7 +40,15 @@ function mapAgent(agent: AgentResponse): MockupAgent {
   };
 }
 
-export function AgentsPage() {
+interface AgentsPageProps {
+  initialSelectedAgentId?: string | null;
+  initialSelectedAgentName?: string | null;
+}
+
+export function AgentsPage({
+  initialSelectedAgentId = null,
+  initialSelectedAgentName = null,
+}: AgentsPageProps) {
   const env = readAppEnv();
   const { accessToken } = useSessionStore();
   const [agents, setAgents] = useState<MockupAgent[]>(
@@ -61,6 +69,7 @@ export function AgentsPage() {
     agentId: string;
     appToken: string;
   } | null>(null);
+  const lastAppliedSelectionRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (env.apiMockingEnabled) {
@@ -122,6 +131,38 @@ export function AgentsPage() {
       setSelectedId(filteredAgents[0]?.id ?? null);
     }
   }, [filteredAgents, selectedId]);
+
+  useEffect(() => {
+    if (!initialSelectedAgentId && !initialSelectedAgentName) {
+      return;
+    }
+
+    const selectionKey = `${initialSelectedAgentId ?? ""}|${initialSelectedAgentName ?? ""}`;
+    if (lastAppliedSelectionRef.current === selectionKey) {
+      return;
+    }
+
+    const matchedAgent = agents.find((agent) => {
+      if (initialSelectedAgentId && agent.id === initialSelectedAgentId) {
+        return true;
+      }
+
+      return Boolean(
+        initialSelectedAgentName &&
+          agent.name.toLowerCase() === initialSelectedAgentName.toLowerCase(),
+      );
+    });
+
+    lastAppliedSelectionRef.current = selectionKey;
+    if (matchedAgent && matchedAgent.id !== selectedId) {
+      setSelectedId(matchedAgent.id);
+    }
+  }, [
+    agents,
+    initialSelectedAgentId,
+    initialSelectedAgentName,
+    selectedId,
+  ]);
 
   const selectedAgent =
     filteredAgents.find((agent) => agent.id === selectedId) ??
@@ -303,6 +344,7 @@ export function AgentsPage() {
                   {selectedAgent.risk}
                 </Badge>
               }
+              copyLink={`#/agents?agent=${encodeURIComponent(selectedAgent.id)}&agentName=${encodeURIComponent(selectedAgent.name)}`}
               className="min-h-[680px] xl:h-full xl:min-h-0"
             >
               <DetailPanelSection heading="Overview">
@@ -373,7 +415,11 @@ export function AgentsPage() {
                         </dt>
                         <dd className="mt-2 flex flex-wrap gap-2">
                           {selectedAgent.linkedSecrets.map((secret) => (
-                            <EntityBadge key={secret} kind="secret">
+                            <EntityBadge
+                              key={secret}
+                              kind="secret"
+                              href={`#/secrets?secretName=${encodeURIComponent(secret)}`}
+                            >
                               {secret}
                             </EntityBadge>
                           ))}
