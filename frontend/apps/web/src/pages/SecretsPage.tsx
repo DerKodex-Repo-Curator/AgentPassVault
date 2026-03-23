@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SecretDetailsResponse, MasterKeys } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
-import { Badge, Button, Card, Input, Toast } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DetailPanel,
+  DetailPanelSection,
+  Input,
+  Toast,
+} from "../components/ui";
 import { readAppEnv } from "../config/env";
 import { formatDateTime, formatRelativeLabel } from "../mockup/format";
 import { type MockupSecret, mockupSecrets } from "../mockup/lofi-data";
@@ -231,7 +239,7 @@ export function SecretsPage({
                   key={secret.id}
                   className={`rounded-[var(--radius-card)] border p-4 transition ${
                     isSelected
-                      ? "border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)]"
+                      ? "border-[var(--color-domain-secrets-border)] border-l-[3px] border-l-[var(--color-domain-secrets-strong)] bg-[var(--color-domain-secrets-soft)] shadow-sm"
                       : "border-[var(--color-border)] bg-[var(--color-surface)]"
                   }`}
                 >
@@ -290,40 +298,44 @@ export function SecretsPage({
           </div>
         </Card>
 
-        <div className="space-y-4">
+        <div className="xl:pl-2">
           {selectedSecret ? (
-            <>
-              <Card
-                title={selectedSecret.name}
-                description={selectedSecret.note}
-                actions={
-                  <Badge tone="neutral">{selectedSecret.environment}</Badge>
-                }
-              >
-                <dl className="grid gap-3 sm:grid-cols-2">
+            <DetailPanel
+              tone="secrets"
+              eyebrow="Selected secret"
+              heading={
+                <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                  {selectedSecret.name}
+                </h2>
+              }
+              description={selectedSecret.note}
+              actions={
+                <Badge tone="neutral">{selectedSecret.environment}</Badge>
+              }
+              className="min-h-[720px]"
+            >
+              <DetailPanelSection heading="Overview">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Service
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {selectedSecret.service}
-                    </dd>
+                    </p>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Owner
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {selectedSecret.owner}
-                    </dd>
+                    </p>
                   </div>
-                </dl>
-              </Card>
+                </div>
+              </DetailPanelSection>
 
-              <Card
-                title="Value preview"
-                description="Quick reveal should feel lightweight, not theatrical."
-              >
+              <DetailPanelSection heading="Value preview">
                 <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
                   {revealedIds[selectedSecret.id]
                     ? selectedSecret.revealedValue
@@ -345,56 +357,60 @@ export function SecretsPage({
                     Open detail
                   </Button>
                 </div>
-              </Card>
+              </DetailPanelSection>
 
-              <Card
-                title="Metadata"
-                description="Raw metadata remains readable and exact."
-              >
-                <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
-                  {JSON.stringify(selectedSecret.metadata, null, 2)}
-                </pre>
-              </Card>
-
-              <Card
-                title="Lease exposure"
-                description="Which agents currently depend on this secret."
-              >
-                <dl className="grid gap-3 text-sm text-[var(--color-text)]">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Active leases
-                    </dt>
-                    <dd>{selectedSecret.leaseCount}</dd>
-                  </div>
+              <DetailPanelSection heading="Exposure and metadata">
+                <div className="grid gap-5">
                   <div>
-                    <dt className="text-[var(--color-text-muted)]">
-                      Active agents
-                    </dt>
-                    <dd className="mt-2 flex flex-wrap gap-2">
-                      {selectedSecret.activeAgents.map((agent) => (
-                        <span
-                          key={agent}
-                          className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
-                        >
-                          {agent}
-                        </span>
-                      ))}
-                    </dd>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Lease exposure
+                    </p>
+                    <dl className="mt-2 grid gap-3 text-sm text-[var(--color-text)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Active leases
+                        </dt>
+                        <dd>{selectedSecret.leaseCount}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--color-text-muted)]">
+                          Active agents
+                        </dt>
+                        <dd className="mt-2 flex flex-wrap gap-2">
+                          {selectedSecret.activeAgents.map((agent) => (
+                            <span
+                              key={agent}
+                              className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
+                            >
+                              {agent}
+                            </span>
+                          ))}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                </dl>
-              </Card>
-            </>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Metadata
+                    </p>
+                    <pre className="mt-2 overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                      {JSON.stringify(selectedSecret.metadata, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              </DetailPanelSection>
+            </DetailPanel>
           ) : (
-            <Card
-              title="No secret selected"
-              description="Choose a secret from the catalog to inspect it."
-            >
-              <p className="text-sm text-[var(--color-text-muted)]">
-                The detail pane will remain empty until a visible secret is
-                selected.
-              </p>
-            </Card>
+            <DetailPanel
+              tone="secrets"
+              eyebrow="Selected secret"
+              heading={
+                <h2 className="text-lg font-semibold">No secret selected</h2>
+              }
+              description="The detail pane will remain empty until a visible secret is selected."
+              className="min-h-[720px]"
+            />
           )}
         </div>
       </div>

@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AgentResponse } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
-import { Badge, Button, Card, Input, Modal, Toast } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DetailPanel,
+  DetailPanelSection,
+  Input,
+  Modal,
+  Toast,
+} from "../components/ui";
 import { readAppEnv } from "../config/env";
 import { formatDateTime, formatRelativeLabel } from "../mockup/format";
 import { type MockupAgent, mockupAgents } from "../mockup/lofi-data";
@@ -169,7 +178,7 @@ export function AgentsPage() {
                   onClick={() => setSelectedId(agent.id)}
                   className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
-                      ? "border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)]"
+                      ? "border-[var(--color-domain-agents-border)] border-l-[3px] border-l-[var(--color-domain-agents-strong)] bg-[var(--color-domain-agents-soft)] shadow-sm"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"
                   }`}
                 >
@@ -205,112 +214,128 @@ export function AgentsPage() {
           </div>
         </Card>
 
-        <div className="space-y-4">
+        <div className="xl:pl-2">
           {selectedAgent ? (
-            <>
-              <Card
-                title={selectedAgent.displayName}
-                description={selectedAgent.note}
-                actions={
-                  <Badge
-                    tone={
-                      selectedAgent.risk === "stable" ? "success" : "warning"
-                    }
-                  >
-                    {selectedAgent.risk}
-                  </Badge>
-                }
-              >
-                <dl className="grid gap-3 sm:grid-cols-2">
+            <DetailPanel
+              tone="agents"
+              eyebrow="Selected agent"
+              heading={
+                <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                  {selectedAgent.displayName}
+                </h2>
+              }
+              description={selectedAgent.note}
+              actions={
+                <Badge
+                  tone={selectedAgent.risk === "stable" ? "success" : "warning"}
+                >
+                  {selectedAgent.risk}
+                </Badge>
+              }
+              className="min-h-[680px]"
+            >
+              <DetailPanelSection heading="Overview">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Agent ID
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {selectedAgent.id}
-                    </dd>
+                    </p>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Environment
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {selectedAgent.environment}
-                    </dd>
+                    </p>
                   </div>
-                </dl>
-              </Card>
+                </div>
+              </DetailPanelSection>
 
-              <Card
-                title="Registration and key state"
-                description="Identity and key posture stay near the top of the detail panel."
-              >
-                <dl className="grid gap-3 text-sm text-[var(--color-text)]">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Public key state
-                    </dt>
-                    <dd>{selectedAgent.publicKeyState}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Key fingerprint
-                    </dt>
-                    <dd className="font-mono text-xs">
-                      {selectedAgent.keyFingerprint}
-                    </dd>
-                  </div>
-                </dl>
-              </Card>
-
-              <Card
-                title="Operational exposure"
-                description="Active leases and linked secrets explain blast radius quickly."
-              >
-                <dl className="grid gap-3 text-sm text-[var(--color-text)]">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Active leases
-                    </dt>
-                    <dd>{selectedAgent.activeLeases}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Last activity
-                    </dt>
-                    <dd>{formatDateTime(selectedAgent.lastActivityAt)}</dd>
-                  </div>
+              <DetailPanelSection heading="Registration and exposure">
+                <div className="grid gap-5">
                   <div>
-                    <dt className="text-[var(--color-text-muted)]">
-                      Linked secrets
-                    </dt>
-                    <dd className="mt-2 flex flex-wrap gap-2">
-                      {selectedAgent.linkedSecrets.map((secret) => (
-                        <span
-                          key={secret}
-                          className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
-                        >
-                          {secret}
-                        </span>
-                      ))}
-                    </dd>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Registration and key state
+                    </p>
+                    <dl className="mt-2 grid gap-3 text-sm text-[var(--color-text)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Public key state
+                        </dt>
+                        <dd>{selectedAgent.publicKeyState}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Key fingerprint
+                        </dt>
+                        <dd className="font-mono text-xs">
+                          {selectedAgent.keyFingerprint}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                </dl>
-              </Card>
 
-              <Card
-                title="Actions"
-                description="High-risk actions stay beside the context that justifies them."
-              >
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Operational exposure
+                    </p>
+                    <dl className="mt-2 grid gap-3 text-sm text-[var(--color-text)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Active leases
+                        </dt>
+                        <dd>{selectedAgent.activeLeases}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Last activity
+                        </dt>
+                        <dd>{formatDateTime(selectedAgent.lastActivityAt)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--color-text-muted)]">
+                          Linked secrets
+                        </dt>
+                        <dd className="mt-2 flex flex-wrap gap-2">
+                          {selectedAgent.linkedSecrets.map((secret) => (
+                            <span
+                              key={secret}
+                              className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
+                            >
+                              {secret}
+                            </span>
+                          ))}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+              </DetailPanelSection>
+
+              <DetailPanelSection heading="Actions">
                 <div className="flex flex-wrap gap-3">
                   <Button variant="secondary">Rotate token</Button>
                   <Button variant="danger" onClick={() => setRevokeOpen(true)}>
                     Revoke agent
                   </Button>
                 </div>
-              </Card>
-            </>
-          ) : null}
+              </DetailPanelSection>
+            </DetailPanel>
+          ) : (
+            <DetailPanel
+              tone="agents"
+              eyebrow="Selected agent"
+              heading={
+                <h2 className="text-lg font-semibold">No agent selected</h2>
+              }
+              description="Choose an agent from the inventory to inspect registration, lease exposure, and available actions."
+              className="min-h-[680px]"
+            />
+          )}
         </div>
       </div>
 

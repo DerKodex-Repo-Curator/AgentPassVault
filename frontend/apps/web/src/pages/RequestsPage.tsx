@@ -5,6 +5,8 @@ import {
   Badge,
   Button,
   Card,
+  DetailPanel,
+  DetailPanelSection,
   Input,
   Tabs,
   type TabItem,
@@ -285,7 +287,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   onClick={() => setSelectedId(request.id)}
                   className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
-                      ? "border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)]"
+                      ? "border-[var(--color-domain-requests-border)] border-l-[3px] border-l-[var(--color-domain-requests-strong)] bg-[var(--color-domain-requests-soft)] shadow-sm"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"
                   }`}
                 >
@@ -334,113 +336,117 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
           </div>
         </Card>
 
-        <div className="space-y-4">
+        <div className="xl:pl-2">
           {selectedRequest ? (
-            <>
-              <Card
-                title={selectedRequest.name}
-                description={selectedRequest.summary}
-                actions={
-                  <Badge tone={statusTone(selectedRequest.status)}>
-                    {selectedRequest.status}
-                  </Badge>
-                }
-              >
-                <dl className="grid gap-3 sm:grid-cols-2">
+            <DetailPanel
+              tone="requests"
+              eyebrow="Selected request"
+              heading={
+                <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                  {selectedRequest.name}
+                </h2>
+              }
+              description={selectedRequest.summary}
+              actions={
+                <Badge tone={statusTone(selectedRequest.status)}>
+                  {selectedRequest.status}
+                </Badge>
+              }
+              className="min-h-[720px]"
+            >
+              <DetailPanelSection heading="Overview">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Agent
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {selectedRequest.agentName}
-                    </dd>
+                    </p>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Updated
-                    </dt>
-                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
                       {formatDateTime(selectedRequest.updatedAt)}
-                    </dd>
+                    </p>
                   </div>
-                </dl>
-              </Card>
+                </div>
+              </DetailPanelSection>
 
-              <Card
-                title="Context"
-                description="One sentence that explains what is happening now."
-              >
+              <DetailPanelSection heading="Context">
                 <p className="text-sm leading-6 text-[var(--color-text)]">
                   {selectedRequest.context}
                 </p>
-              </Card>
+              </DetailPanelSection>
 
-              <Card
-                title="Requirements"
-                description="Required fields from the requesting agent."
-              >
-                <div className="flex flex-wrap gap-2">
-                  {selectedRequest.requiredFields.map((field) => (
-                    <span
-                      key={field}
-                      className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
-                    >
-                      {field}
-                    </span>
-                  ))}
-                  {selectedRequest.requiredFields.length === 0 ? (
-                    <span className="text-sm text-[var(--color-text-muted)]">
-                      No required fields provided.
-                    </span>
-                  ) : null}
+              <DetailPanelSection heading="Requirements and lease posture">
+                <div className="grid gap-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Requirements
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedRequest.requiredFields.map((field) => (
+                        <span
+                          key={field}
+                          className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
+                        >
+                          {field}
+                        </span>
+                      ))}
+                      {selectedRequest.requiredFields.length === 0 ? (
+                        <span className="text-sm text-[var(--color-text-muted)]">
+                          No required fields provided.
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Linked secret and lease
+                    </p>
+                    <dl className="mt-2 grid gap-3 text-sm text-[var(--color-text)]">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Linked secret
+                        </dt>
+                        <dd>
+                          {selectedRequest.linkedSecretName ?? "Not linked yet"}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-[var(--color-text-muted)]">
+                          Lease state
+                        </dt>
+                        <dd>
+                          {selectedRequest.leaseStatus ?? "No lease issued yet"}
+                        </dd>
+                      </div>
+                      {selectedRequest.leaseExpiresAt ? (
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-[var(--color-text-muted)]">
+                            Lease expiry
+                          </dt>
+                          <dd>
+                            {formatDateTime(selectedRequest.leaseExpiresAt)}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
                 </div>
-              </Card>
+              </DetailPanelSection>
 
-              <Card
-                title="Metadata"
-                description="Raw request metadata remains visible for operator judgment."
-              >
+              <DetailPanelSection heading="Metadata">
                 <pre className="overflow-x-auto rounded-[var(--radius-panel)] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
                   {JSON.stringify(selectedRequest.metadata, null, 2)}
                 </pre>
-              </Card>
+              </DetailPanelSection>
 
-              <Card
-                title="Linked secret or lease"
-                description="Current secret linkage and lease posture."
-              >
-                <dl className="grid gap-3 text-sm text-[var(--color-text)]">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Linked secret
-                    </dt>
-                    <dd>
-                      {selectedRequest.linkedSecretName ?? "Not linked yet"}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--color-text-muted)]">
-                      Lease state
-                    </dt>
-                    <dd>
-                      {selectedRequest.leaseStatus ?? "No lease issued yet"}
-                    </dd>
-                  </div>
-                  {selectedRequest.leaseExpiresAt ? (
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-[var(--color-text-muted)]">
-                        Lease expiry
-                      </dt>
-                      <dd>{formatDateTime(selectedRequest.leaseExpiresAt)}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-              </Card>
-
-              <Card
-                title="Actions"
-                description="Consequential actions stay in the detail boundary."
-              >
+              <DetailPanelSection heading="Actions">
                 <div className="flex flex-wrap gap-3">
                   <Button onClick={() => onOpenRequest(selectedRequest.id)}>
                     Open detail
@@ -456,18 +462,18 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                     </a>
                   ) : null}
                 </div>
-              </Card>
-            </>
+              </DetailPanelSection>
+            </DetailPanel>
           ) : (
-            <Card
-              title="No request selected"
-              description="Choose a row from the inbox to inspect it."
-            >
-              <p className="text-sm text-[var(--color-text-muted)]">
-                The detail panel stays empty until there is a visible request in
-                the queue.
-              </p>
-            </Card>
+            <DetailPanel
+              tone="requests"
+              eyebrow="Selected request"
+              heading={
+                <h2 className="text-lg font-semibold">No request selected</h2>
+              }
+              description="The detail panel stays empty until there is a visible request in the queue."
+              className="min-h-[720px]"
+            />
           )}
         </div>
       </div>
