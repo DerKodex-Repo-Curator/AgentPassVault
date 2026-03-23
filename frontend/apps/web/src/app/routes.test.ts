@@ -29,4 +29,18 @@ describe("parseRoute", () => {
       params: { secretId: "sec-abc" },
     });
   });
+
+  it("parses agents route", () => {
+    expect(parseRoute("#/agents", "/")).toEqual({
+      route: "agents",
+      params: {},
+    });
+  });
+
+  it("parses audit log route", () => {
+    expect(parseRoute("#/audit-log", "/")).toEqual({
+      route: "audit-log",
+      params: {},
+    });
+  });
 });

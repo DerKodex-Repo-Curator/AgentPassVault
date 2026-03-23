@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { MasterKeys } from "@agentpassvault/sdk";
-import { CryptoService } from "@agentpassvault/sdk";
+import type { SecretDetailsResponse, MasterKeys } from "@agentpassvault/sdk";
 import { appApiClient } from "../api/client";
-import { metadataByteLength, validateEncryptedValueSize } from "../domain/size-utils";
-import { Button, Card, Input, Textarea, Toast } from "../components/ui";
-import { SecretCryptoAdapter } from "../security";
-import { createSecretSchema } from "../validation";
-import { useSecretsCatalog } from "../hooks/use-secrets-catalog";
-import { SecretsCatalogView, type SecretCatalogRow } from "../components/secrets/SecretsCatalogView";
-
-interface FormErrors {
-  name?: string;
-  plaintextValue?: string;
-  metadata?: string;
-}
+import { Badge, Button, Card, Input, Toast } from "../components/ui";
+import { readAppEnv } from "../config/env";
+import { formatDateTime, formatRelativeLabel } from "../mockup/format";
+import { type MockupSecret, mockupSecrets } from "../mockup/lofi-data";
+import { useSessionStore } from "../state/session-store";
 
 interface SecretsPageProps {
   isVaultLocked: boolean;
@@ -21,244 +13,391 @@ interface SecretsPageProps {
   onOpenSecret: (secretId: string) => void;
 }
 
-function parseMetadataJson(raw: string): { parsed?: Record<string, string>; error?: string } {
-  let parsedValue: unknown;
-
-  try {
-    parsedValue = JSON.parse(raw);
-  } catch {
-    return { error: "Metadata must be valid JSON object." };
+function normalizeMetadata(
+  metadata: SecretDetailsResponse["metadata"],
+): Record<string, string> {
+  if (!metadata) {
+    return {};
   }
 
-  if (!parsedValue || typeof parsedValue !== "object" || Array.isArray(parsedValue)) {
-    return { error: "Metadata must be a JSON object with string values." };
-  }
-
-  const parsedObject = parsedValue as Record<string, unknown>;
   const normalized: Record<string, string> = {};
-
-  for (const [key, value] of Object.entries(parsedObject)) {
-    if (typeof value !== "string") {
-      return { error: `Metadata value for \"${key}\" must be a string.` };
-    }
-    normalized[key] = value;
-  }
-
-  return { parsed: normalized };
-}
-
-function toApiMetadata(metadata: Record<string, string>): { [key: string]: object } {
-  const output: { [key: string]: object } = {};
   for (const [key, value] of Object.entries(metadata)) {
-    output[key] = { value };
+    if (typeof value === "string") {
+      normalized[key] = value;
+      continue;
+    }
+
+    if (value && typeof value === "object" && "value" in value) {
+      normalized[key] =
+        typeof value.value === "string"
+          ? value.value
+          : JSON.stringify(value.value);
+      continue;
+    }
+
+    normalized[key] = JSON.stringify(value);
   }
 
-  return output;
+  return normalized;
 }
 
-export function SecretsPage({ isVaultLocked, masterKeys, onOpenSecret }: SecretsPageProps) {
-  const [name, setName] = useState("");
-  const [plaintextValue, setPlaintextValue] = useState("");
-  const [metadataJson, setMetadataJson] = useState('{\n  "service": "aws"\n}');
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [dismissedCatalogError, setDismissedCatalogError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [localSecrets, setLocalSecrets] = useState<SecretCatalogRow[]>([]);
-  const [revealedSecret, setRevealedSecret] = useState<Record<string, string>>({});
-  const secretsCatalog = useSecretsCatalog();
+function mapSecret(secret: SecretDetailsResponse): MockupSecret {
+  const metadata = normalizeMetadata(secret.metadata);
+
+  return {
+    id: secret.secretId ?? `secret-${Math.random().toString(36).slice(2)}`,
+    name: secret.name ?? "Unnamed secret",
+    service: metadata.service ?? "unknown",
+    environment: metadata.environment ?? "shared",
+    owner: metadata.owner ?? "Unknown owner",
+    updatedAt: secret.updatedAt
+      ? new Date(secret.updatedAt).toISOString()
+      : new Date().toISOString(),
+    revealedValue: "Reveal is available in mocked mode for the lo-fi preview.",
+    metadata,
+    leaseCount: 0,
+    activeAgents: [],
+    note: "Live mode only exposes list metadata in the current mockup branch.",
+  };
+}
+
+export function SecretsPage({
+  isVaultLocked,
+  masterKeys,
+  onOpenSecret,
+}: SecretsPageProps) {
+  const env = readAppEnv();
+  const { accessToken } = useSessionStore();
+  const [secrets, setSecrets] = useState<MockupSecret[]>(
+    env.apiMockingEnabled ? mockupSecrets : [],
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(
+    mockupSecrets[0]?.id ?? null,
+  );
+  const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(!env.apiMockingEnabled);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (env.apiMockingEnabled) {
+      setSecrets(mockupSecrets);
+      setSelectedId(mockupSecrets[0]?.id ?? null);
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      const result = await appApiClient.listSecrets();
+      if (!active) {
+        return;
+      }
+
+      if (!result.ok) {
+        setLoading(false);
+        setError(result.error.message);
+        return;
+      }
+
+      const mapped = result.data.map((secret) => mapSecret(secret));
+      setSecrets(mapped);
+      setSelectedId(mapped[0]?.id ?? null);
+      setLoading(false);
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, env.apiMockingEnabled]);
 
   useEffect(() => {
     if (isVaultLocked) {
-      setRevealedSecret({});
+      setRevealedIds({});
     }
   }, [isVaultLocked]);
 
-  const metadataPreviewBytes = useMemo(() => {
-    const parsedResult = parseMetadataJson(metadataJson);
-    if (!parsedResult.parsed) {
-      return 0;
+  const filteredSecrets = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return secrets.filter((secret) => {
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      return (
+        secret.name.toLowerCase().includes(normalizedQuery) ||
+        secret.service.toLowerCase().includes(normalizedQuery) ||
+        secret.environment.toLowerCase().includes(normalizedQuery) ||
+        secret.owner.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [query, secrets]);
+
+  useEffect(() => {
+    if (!filteredSecrets.some((secret) => secret.id === selectedId)) {
+      setSelectedId(filteredSecrets[0]?.id ?? null);
     }
+  }, [filteredSecrets, selectedId]);
 
-    return metadataByteLength(parsedResult.parsed);
-  }, [metadataJson]);
+  const selectedSecret =
+    filteredSecrets.find((secret) => secret.id === selectedId) ??
+    filteredSecrets[0] ??
+    null;
 
-  const onSubmit = async () => {
-    setToastMessage(null);
-
+  const toggleReveal = (secretId: string) => {
     if (isVaultLocked || !masterKeys) {
-      setToastMessage("Vault is locked. Unlock before creating secrets.");
+      setNotice("Vault is locked. Unlock before revealing secret values.");
       return;
     }
 
-    const metadataResult = parseMetadataJson(metadataJson);
-    if (!metadataResult.parsed) {
-      setFormErrors({ metadata: metadataResult.error });
-      return;
-    }
-
-    const parsed = createSecretSchema.safeParse({
-      name,
-      plaintextValue,
-      metadata: metadataResult.parsed,
-    });
-
-    if (!parsed.success) {
-      const flattened = parsed.error.flatten();
-      setFormErrors({
-        name: flattened.fieldErrors.name?.[0],
-        plaintextValue: flattened.fieldErrors.plaintextValue?.[0],
-        metadata: flattened.fieldErrors.metadata?.[0],
-      });
-      return;
-    }
-
-    const encrypted = await SecretCryptoAdapter.encryptPlaintextSecret(parsed.data, masterKeys);
-    const encryptedSizeError = validateEncryptedValueSize(encrypted.encryptedValue);
-    if (encryptedSizeError) {
-      setFormErrors({ plaintextValue: encryptedSizeError });
-      return;
-    }
-
-    setFormErrors({});
-
-    const localSecret: SecretCatalogRow = {
-      id: `local-${Date.now()}`,
-      name: encrypted.name,
-      encryptedValue: encrypted.encryptedValue,
-      updatedAt: new Date().toISOString().slice(0, 10),
-    };
-
-    setLocalSecrets((prev) => [localSecret, ...prev]);
-
-    setSubmitting(true);
-    const result = await appApiClient.createSecret({
-      name: encrypted.name,
-      encryptedValue: encrypted.encryptedValue,
-      metadata: toApiMetadata(encrypted.metadata),
-    });
-    setSubmitting(false);
-
-    if (!result.ok) {
-      setToastMessage(`Create secret failed (${result.error.status}): ${result.error.message}`);
-      return;
-    }
-
-    secretsCatalog.prependCreatedSecret(result.data);
-
-    setToastMessage("Secret encrypted locally and submitted successfully.");
-
-    setName("");
-    setPlaintextValue("");
+    setNotice(null);
+    setRevealedIds((current) => ({
+      ...current,
+      [secretId]: !current[secretId],
+    }));
   };
 
-  const handleToggleReveal = async (secret: SecretCatalogRow) => {
-    if (isVaultLocked || !masterKeys) {
-      setToastMessage("Vault is locked. Unlock before revealing values.");
-      return;
-    }
-
-    const isVisible = Boolean(revealedSecret[secret.id]);
-    if (isVisible) {
-      setRevealedSecret((prev) => {
-        const next = { ...prev };
-        delete next[secret.id];
-        return next;
-      });
-      return;
-    }
-
-    const decrypted = await CryptoService.decryptSymmetric(
-      secret.encryptedValue,
-      masterKeys.encKey,
-      masterKeys.macKey,
-    );
-
-    setRevealedSecret((prev) => ({ ...prev, [secret.id]: decrypted }));
-  };
-
-  const tableRows = [
-    ...localSecrets,
-    ...secretsCatalog.items
-      .filter((persisted) => !localSecrets.some((local) => local.id === persisted.id))
-      .map((item) => ({ ...item, encryptedValue: "" })),
-  ];
+  if (loading) {
+    return <Toast title="Secrets">Loading secrets...</Toast>;
+  }
 
   return (
     <section className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Secrets</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Plaintext input is encrypted locally before API submission.
-        </p>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-secrets-text)]">
+            Secrets
+          </p>
+          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
+            Inspect protected assets without losing operational context.
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
+            Secret values can be inspected quickly, while metadata, lease
+            exposure, and ownership stay visible in the detail pane.
+          </p>
+        </div>
+        <div className="rounded-[16px] border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-4 py-3 text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-domain-secrets-text)]">
+            Stored secrets
+          </p>
+          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-domain-secrets-text)]">
+            {secrets.length}
+          </p>
+        </div>
       </header>
 
-      {toastMessage ? (
-        <Toast title="Secret Create" onDismiss={() => setToastMessage(null)}>
-          {toastMessage}
+      {notice ? (
+        <Toast title="Secrets" onDismiss={() => setNotice(null)}>
+          {notice}
         </Toast>
       ) : null}
-      {secretsCatalog.error && secretsCatalog.error !== dismissedCatalogError ? (
-        <Toast
-          tone="error"
-          title="Secrets"
-          onDismiss={() => {
-            setDismissedCatalogError(secretsCatalog.error ?? null);
-          }}
+      {error ? (
+        <Toast tone="error" title="Secrets">
+          {error}
+        </Toast>
+      ) : null}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
+        <Card
+          title="Catalog"
+          description="Quick reveal is available directly in the list."
+          className="min-h-[720px]"
         >
-          {secretsCatalog.error}
-        </Toast>
-      ) : null}
-
-      <Card title="Create Secret" description="MVP accepts plaintext string and encrypts before send.">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Input
-            label="Name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            error={formErrors.name}
-            placeholder="AWS Production Credentials"
-          />
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-xs text-[var(--color-text-muted)]">
-            <p>Metadata bytes (estimated): {metadataPreviewBytes}</p>
+          <div className="mb-4">
+            <Input
+              label="Search secrets"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by secret, service, owner, or environment"
+            />
           </div>
-        </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Textarea
-            label="Secret Value (Plaintext)"
-            value={plaintextValue}
-            onChange={(event) => setPlaintextValue(event.target.value)}
-            error={formErrors.plaintextValue}
-            placeholder="my-super-secret-value"
-          />
-          <Textarea
-            label="Metadata JSON"
-            value={metadataJson}
-            onChange={(event) => setMetadataJson(event.target.value)}
-            error={formErrors.metadata}
-            placeholder='{"service":"aws"}'
-          />
-        </div>
+          <div className="space-y-2">
+            {filteredSecrets.map((secret) => {
+              const isSelected = secret.id === selectedSecret?.id;
+              const isRevealed = Boolean(revealedIds[secret.id]);
 
-        <div className="mt-4 flex justify-end">
-          <Button onClick={onSubmit} disabled={submitting || isVaultLocked}>
-            {submitting ? "Submitting..." : "Encrypt & Submit"}
-          </Button>
-        </div>
-      </Card>
+              return (
+                <div
+                  key={secret.id}
+                  className={`rounded-[16px] border p-4 transition ${
+                    isSelected
+                      ? "border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => setSelectedId(secret.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge tone="neutral">{secret.service}</Badge>
+                        <span className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                          {secret.environment}
+                        </span>
+                      </div>
+                      <h2 className="mt-2 truncate text-sm font-semibold text-[var(--color-text)]">
+                        {secret.name}
+                      </h2>
+                      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                        {secret.note}
+                      </p>
+                    </button>
+                    <div className="text-right text-xs text-[var(--color-text-subtle)]">
+                      <p>{formatRelativeLabel(secret.updatedAt)}</p>
+                      <p className="mt-1">{formatDateTime(secret.updatedAt)}</p>
+                    </div>
+                  </div>
 
-      <SecretsCatalogView
-        loading={secretsCatalog.loading}
-        rows={tableRows}
-        revealedValues={revealedSecret}
-        onToggleReveal={(secret) => {
-          void handleToggleReveal(secret);
-        }}
-        onView={(secret) => {
-          onOpenSecret(secret.id);
-        }}
-      />
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="truncate text-xs text-[var(--color-text-muted)]">
+                      Owner: {secret.owner}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => toggleReveal(secret.id)}
+                      className="text-xs font-semibold text-[var(--color-primary)]"
+                    >
+                      {isRevealed ? "Hide" : "Reveal"}
+                    </button>
+                  </div>
+
+                  {isRevealed ? (
+                    <pre className="mt-3 overflow-x-auto rounded-[12px] bg-[var(--color-surface-subtle)] p-3 text-xs leading-6 text-[var(--color-text)]">
+                      {secret.revealedValue}
+                    </pre>
+                  ) : null}
+                </div>
+              );
+            })}
+
+            {filteredSecrets.length === 0 ? (
+              <div className="rounded-[16px] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
+                No secrets match the current query.
+              </div>
+            ) : null}
+          </div>
+        </Card>
+
+        <div className="space-y-4">
+          {selectedSecret ? (
+            <>
+              <Card
+                title={selectedSecret.name}
+                description={selectedSecret.note}
+                actions={
+                  <Badge tone="neutral">{selectedSecret.environment}</Badge>
+                }
+              >
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Service
+                    </dt>
+                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                      {selectedSecret.service}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+                      Owner
+                    </dt>
+                    <dd className="mt-1 text-sm text-[var(--color-text)]">
+                      {selectedSecret.owner}
+                    </dd>
+                  </div>
+                </dl>
+              </Card>
+
+              <Card
+                title="Value preview"
+                description="Quick reveal should feel lightweight, not theatrical."
+              >
+                <pre className="overflow-x-auto rounded-[14px] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                  {revealedIds[selectedSecret.id]
+                    ? selectedSecret.revealedValue
+                    : "••••••••••••••••••••••••••••"}
+                </pre>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => toggleReveal(selectedSecret.id)}
+                  >
+                    {revealedIds[selectedSecret.id]
+                      ? "Hide value"
+                      : "Reveal value"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => onOpenSecret(selectedSecret.id)}
+                  >
+                    Open detail
+                  </Button>
+                </div>
+              </Card>
+
+              <Card
+                title="Metadata"
+                description="Raw metadata remains readable and exact."
+              >
+                <pre className="overflow-x-auto rounded-[14px] bg-[var(--color-surface-subtle)] p-4 text-xs leading-6 text-[var(--color-text)]">
+                  {JSON.stringify(selectedSecret.metadata, null, 2)}
+                </pre>
+              </Card>
+
+              <Card
+                title="Lease exposure"
+                description="Which agents currently depend on this secret."
+              >
+                <dl className="grid gap-3 text-sm text-[var(--color-text)]">
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-[var(--color-text-muted)]">
+                      Active leases
+                    </dt>
+                    <dd>{selectedSecret.leaseCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-text-muted)]">
+                      Active agents
+                    </dt>
+                    <dd className="mt-2 flex flex-wrap gap-2">
+                      {selectedSecret.activeAgents.map((agent) => (
+                        <span
+                          key={agent}
+                          className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
+                        >
+                          {agent}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+              </Card>
+            </>
+          ) : (
+            <Card
+              title="No secret selected"
+              description="Choose a secret from the catalog to inspect it."
+            >
+              <p className="text-sm text-[var(--color-text-muted)]">
+                The detail pane will remain empty until a visible secret is
+                selected.
+              </p>
+            </Card>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

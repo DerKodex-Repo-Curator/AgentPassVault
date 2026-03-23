@@ -5,6 +5,8 @@ import { Toast } from "./components/ui";
 import { useHashRouter } from "./app/router";
 import { DEFAULT_AUTH_ROUTE, ROUTES } from "./app/routes";
 import { LoginPage } from "./pages/LoginPage";
+import { AgentsPage } from "./pages/AgentsPage";
+import { AuditLogPage } from "./pages/AuditLogPage";
 import { RequestDetailPage } from "./pages/RequestDetailPage";
 import { RequestsPage } from "./pages/RequestsPage";
 import { SecretDetailPage } from "./pages/SecretDetailPage";
@@ -32,8 +34,12 @@ async function applyMockDevSession(
 function App() {
   const { match, navigate } = useHashRouter();
   const env = readAppEnv();
-  const [notice, setNotice] = useState<{ message: string; tone: "info" | "success" | "error" } | null>(null);
-  const { isAuthenticated, adminName, setLoginSession, logout, accessToken } = useSessionStore();
+  const [notice, setNotice] = useState<{
+    message: string;
+    tone: "info" | "success" | "error";
+  } | null>(null);
+  const { isAuthenticated, adminName, setLoginSession, logout, accessToken } =
+    useSessionStore();
   const {
     masterKeys,
     loginHash,
@@ -46,7 +52,8 @@ function App() {
     vaultUnlockedAt,
   } = useVaultKeyStore();
   const pageStateKey = `${isLocked ? "locked" : "unlocked"}-${vaultUnlockedAt ?? 0}`;
-  const mockBootstrapNeeded = env.apiMockingEnabled && (!isAuthenticated || (!loginHash && !masterKeys));
+  const mockBootstrapNeeded =
+    env.apiMockingEnabled && (!isAuthenticated || (!loginHash && !masterKeys));
 
   useEffect(() => {
     appApiClient.setAccessToken(accessToken);
@@ -59,13 +66,15 @@ function App() {
 
     let active = true;
 
-    void applyMockDevSession(setLoginSession, setVaultSession).catch((error) => {
-      if (!active) {
-        return;
-      }
+    void applyMockDevSession(setLoginSession, setVaultSession).catch(
+      (error) => {
+        if (!active) {
+          return;
+        }
 
-      console.error("Mock auth bootstrap failed.", error);
-    });
+        console.error("Mock auth bootstrap failed.", error);
+      },
+    );
 
     return () => {
       active = false;
@@ -86,7 +95,11 @@ function App() {
       return;
     }
 
-    if (!isAuthenticated && match.route !== "login" && match.route !== "fulfillment") {
+    if (
+      !isAuthenticated &&
+      match.route !== "login" &&
+      match.route !== "fulfillment"
+    ) {
       navigate("/login");
       return;
     }
@@ -112,7 +125,10 @@ function App() {
       return;
     }
 
-    const derived = await AuthCryptoOrchestrator.deriveForLogin(username, password);
+    const derived = await AuthCryptoOrchestrator.deriveForLogin(
+      username,
+      password,
+    );
 
     const result = await appApiClient.login({
       username: derived.username,
@@ -133,7 +149,10 @@ function App() {
     }
 
     if (!loginHash) {
-      const derived = await AuthCryptoOrchestrator.deriveForLogin(adminName, password);
+      const derived = await AuthCryptoOrchestrator.deriveForLogin(
+        adminName,
+        password,
+      );
       const reloginResult = await appApiClient.login({
         username: derived.username,
         password: derived.loginHash,
@@ -148,7 +167,11 @@ function App() {
       return;
     }
 
-    const unlockResult = await AuthCryptoOrchestrator.validateUnlockPassword(adminName, password, loginHash);
+    const unlockResult = await AuthCryptoOrchestrator.validateUnlockPassword(
+      adminName,
+      password,
+      loginHash,
+    );
     if (!unlockResult.valid || !unlockResult.masterKeys) {
       throw new Error("Invalid master password.");
     }
@@ -198,11 +221,7 @@ function App() {
   }
 
   if (!isAuthenticated || match.route === "login") {
-    return (
-      <LoginPage
-        onLogin={handleLogin}
-      />
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   const navItems = ROUTES.filter((route) => {
@@ -226,7 +245,8 @@ function App() {
       ? "/requests"
       : match.route === "secret-detail"
         ? "/secrets"
-        : ROUTES.find((route) => route.key === match.route)?.path ?? "/requests";
+        : (ROUTES.find((route) => route.key === match.route)?.path ??
+          "/requests");
 
   return (
     <AppShell
@@ -238,8 +258,8 @@ function App() {
       onLogout={
         env.apiMockingEnabled
           ? () => {
-            void applyMockDevSession(setLoginSession, setVaultSession);
-          }
+              void applyMockDevSession(setLoginSession, setVaultSession);
+            }
           : () => {
               clearVaultSession();
               logout();
@@ -248,18 +268,22 @@ function App() {
       }
     >
       {notice ? (
-        <Toast tone={notice.tone} title="Notification" onDismiss={() => setNotice(null)}>
+        <Toast
+          tone={notice.tone}
+          title="Notification"
+          onDismiss={() => setNotice(null)}
+        >
           {notice.message}
         </Toast>
       ) : null}
       {isLocked ? (
-        <VaultUnlockPage
-          username={adminName}
-          onUnlock={handleUnlock}
-        />
+        <VaultUnlockPage username={adminName} onUnlock={handleUnlock} />
       ) : null}
       {match.route === "requests" ? (
-        <RequestsPage key={`requests-${pageStateKey}`} onOpenRequest={(requestId) => navigate(`/requests/${requestId}`)} />
+        <RequestsPage
+          key={`requests-${pageStateKey}`}
+          onOpenRequest={(requestId) => navigate(`/requests/${requestId}`)}
+        />
       ) : null}
       {match.route === "request-detail" ? (
         <RequestDetailPage
@@ -290,6 +314,8 @@ function App() {
           onOpenSecret={(secretId) => navigate(`/secrets/${secretId}`)}
         />
       ) : null}
+      {match.route === "agents" ? <AgentsPage /> : null}
+      {match.route === "audit-log" ? <AuditLogPage /> : null}
       {match.route === "settings" ? <SettingsPage /> : null}
       {match.route === "ui-lab" && env.apiMockingEnabled ? <UiLabPage /> : null}
     </AppShell>

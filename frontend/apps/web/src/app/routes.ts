@@ -3,6 +3,8 @@ export type AppRoute =
   | "fulfillment"
   | "requests"
   | "request-detail"
+  | "agents"
+  | "audit-log"
   | "secrets"
   | "secret-detail"
   | "settings"
@@ -23,6 +25,8 @@ export const ROUTES: RouteDefinition[] = [
   { key: "login", path: "/login", label: "Login" },
   { key: "requests", path: "/requests", label: "Requests" },
   { key: "secrets", path: "/secrets", label: "Secrets" },
+  { key: "agents", path: "/agents", label: "Agents" },
+  { key: "audit-log", path: "/audit-log", label: "Audit Log" },
   { key: "settings", path: "/settings", label: "Settings" },
   { key: "ui-lab", path: "/ui-lab", label: "UI Lab" },
 ];
@@ -63,6 +67,14 @@ function parseHashRoute(hash: string): RouteMatch | null {
     }
 
     return { route: "secrets", params: {} };
+  }
+
+  if (segments[0] === "agents") {
+    return { route: "agents", params: {} };
+  }
+
+  if (segments[0] === "audit-log") {
+    return { route: "audit-log", params: {} };
   }
 
   if (segments[0] === "settings") {
