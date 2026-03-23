@@ -3,18 +3,20 @@ import { Badge, Button, Card, Input } from "../components/ui";
 export function SettingsPage() {
   return (
     <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-          Settings
-        </p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-          Secondary controls stay useful without competing with daily work.
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
-          Settings is intentionally quieter than the operational domains. This
-          mockup keeps it flexible rather than freezing the information
-          architecture too early.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text)]">
+              Settings
+            </p>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
+              Preview
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Secondary controls stay useful without competing with daily work.
+          </p>
+        </div>
       </header>
 
       <Card

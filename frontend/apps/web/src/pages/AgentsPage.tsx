@@ -8,6 +8,7 @@ import {
   Card,
   DetailPanel,
   DetailPanelSection,
+  EntityBadge,
   Input,
   Modal,
   Toast,
@@ -193,10 +194,10 @@ export function AgentsPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-agents-text)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text)]">
               Agents
             </p>
-            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-agents-text)]">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
               Registered {agents.length}
             </span>
           </div>
@@ -248,7 +249,7 @@ export function AgentsPage() {
                   onClick={() => setSelectedId(agent.id)}
                   className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
-                      ? "border-[var(--color-domain-agents-border)] border-l-[3px] border-l-[var(--color-domain-agents-strong)] bg-[var(--color-domain-agents-soft)] shadow-sm"
+                      ? "border-[var(--color-accent-strong)] border-l-4 border-l-[var(--color-accent-strong)] bg-[var(--color-surface)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"
                   }`}
                 >
@@ -372,12 +373,9 @@ export function AgentsPage() {
                         </dt>
                         <dd className="mt-2 flex flex-wrap gap-2">
                           {selectedAgent.linkedSecrets.map((secret) => (
-                            <span
-                              key={secret}
-                              className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
-                            >
+                            <EntityBadge key={secret} kind="secret">
                               {secret}
-                            </span>
+                            </EntityBadge>
                           ))}
                         </dd>
                       </div>

@@ -12,18 +12,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    "border border-transparent bg-[var(--color-primary)] text-white shadow-sm hover:bg-[var(--color-primary-strong)]",
+    "border border-transparent bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm hover:bg-[var(--color-primary-strong)]",
   secondary:
     "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface-muted)]",
   ghost: "text-[var(--color-text)] hover:bg-[var(--color-surface-subtle)]",
   danger:
-    "border border-transparent bg-[var(--color-danger)] text-white shadow-sm hover:bg-[var(--color-danger-strong)]",
+    "border border-transparent bg-[var(--color-danger)] text-[var(--color-danger-foreground)] shadow-sm hover:bg-[var(--color-danger-strong)]",
 };
 
 const sizeClass: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-sm",
+  sm: "h-7 px-2.5 text-xs",
+  md: "h-8 px-3 text-sm",
+  lg: "h-9 px-4 text-sm",
 };
 
 export function Button({

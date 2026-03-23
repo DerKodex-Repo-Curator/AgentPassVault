@@ -61,19 +61,8 @@ function navIconFor(key: string) {
 }
 
 function activeNavClass(key: string) {
-  if (key === "requests") {
-    return "border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] text-[var(--color-domain-requests-text)]";
-  }
-
-  if (key === "secrets") {
-    return "border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] text-[var(--color-domain-secrets-text)]";
-  }
-
-  if (key === "agents") {
-    return "border-[var(--color-domain-agents-border)] bg-[var(--color-domain-agents-soft)] text-[var(--color-domain-agents-text)]";
-  }
-
-  return "border-[var(--color-border-strong)] bg-[var(--color-surface-subtle)] text-[var(--color-text)]";
+  void key;
+  return "border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]";
 }
 
 type ThemeMode = "light" | "dark";

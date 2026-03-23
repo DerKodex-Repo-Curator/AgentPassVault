@@ -7,6 +7,7 @@ import {
   Card,
   DetailPanel,
   DetailPanelSection,
+  EntityBadge,
   Input,
   Tabs,
   type TabItem,
@@ -228,10 +229,10 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-requests-text)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text)]">
               Requests
             </p>
-            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-requests-border)] bg-[var(--color-domain-requests-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-requests-text)]">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
               Pending {pendingCount}
             </span>
           </div>
@@ -284,7 +285,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   onClick={() => setSelectedId(request.id)}
                   className={`w-full rounded-[var(--radius-card)] border p-4 text-left transition ${
                     isSelected
-                      ? "border-[var(--color-domain-requests-border)] border-l-[3px] border-l-[var(--color-domain-requests-strong)] bg-[var(--color-domain-requests-soft)] shadow-sm"
+                      ? "border-[var(--color-accent-strong)] border-l-4 border-l-[var(--color-accent-strong)] bg-[var(--color-surface)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)]"
                   }`}
                 >
@@ -314,9 +315,11 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   </div>
 
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      Agent: {request.agentName}
-                    </p>
+                    <div className="min-w-0">
+                      <EntityBadge kind="agent" className="max-w-full">
+                        {request.agentName}
+                      </EntityBadge>
+                    </div>
                     <span className="text-xs font-semibold text-[var(--color-primary)]">
                       Open
                     </span>
@@ -357,9 +360,11 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
                       Agent
                     </p>
-                    <p className="mt-1 text-sm text-[var(--color-text)]">
-                      {selectedRequest.agentName}
-                    </p>
+                    <div className="mt-2">
+                      <EntityBadge kind="agent">
+                        {selectedRequest.agentName}
+                      </EntityBadge>
+                    </div>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
@@ -411,7 +416,13 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                           Linked secret
                         </dt>
                         <dd>
-                          {selectedRequest.linkedSecretName ?? "Not linked yet"}
+                          {selectedRequest.linkedSecretName ? (
+                            <EntityBadge kind="secret">
+                              {selectedRequest.linkedSecretName}
+                            </EntityBadge>
+                          ) : (
+                            "Not linked yet"
+                          )}
                         </dd>
                       </div>
                       <div className="flex items-center justify-between gap-4">
@@ -451,7 +462,7 @@ export function RequestsPage({ onOpenRequest }: RequestsPageProps) {
                   {selectedRequest.status === "pending" ? (
                     <a
                       href={`#/fulfill/${selectedRequest.id}`}
-                      className="inline-flex h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-medium text-[var(--color-text)] shadow-sm transition hover:bg-[var(--color-surface-muted)]"
+                      className="inline-flex h-8 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-medium text-[var(--color-text)] shadow-sm transition hover:bg-[var(--color-surface-muted)]"
                     >
                       {selectedRequest.type === "LEASE"
                         ? "Open lease review"

@@ -8,6 +8,7 @@ import {
   Card,
   DetailPanel,
   DetailPanelSection,
+  EntityBadge,
   Input,
   Modal,
   Textarea,
@@ -347,10 +348,10 @@ export function SecretsPage({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-domain-secrets-text)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text)]">
               Secrets
             </p>
-            <span className="inline-flex items-center rounded-full border border-[var(--color-domain-secrets-border)] bg-[var(--color-domain-secrets-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-domain-secrets-text)]">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
               Stored {secrets.length}
             </span>
           </div>
@@ -407,7 +408,7 @@ export function SecretsPage({
                   key={secret.id}
                   className={`rounded-[var(--radius-card)] border p-4 transition ${
                     isSelected
-                      ? "border-[var(--color-domain-secrets-border)] border-l-[3px] border-l-[var(--color-domain-secrets-strong)] bg-[var(--color-domain-secrets-soft)] shadow-sm"
+                      ? "border-[var(--color-accent-strong)] border-l-4 border-l-[var(--color-accent-strong)] bg-[var(--color-surface)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)]"
                   }`}
                 >
@@ -546,12 +547,9 @@ export function SecretsPage({
                         </dt>
                         <dd className="mt-2 flex flex-wrap gap-2">
                           {selectedSecret.activeAgents.map((agent) => (
-                            <span
-                              key={agent}
-                              className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-text)]"
-                            >
+                            <EntityBadge key={agent} kind="agent">
                               {agent}
-                            </span>
+                            </EntityBadge>
                           ))}
                         </dd>
                       </div>

@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { Badge, Card, Input, Tabs, type TabItem } from "../components/ui";
+import {
+  Badge,
+  Card,
+  EntityBadge,
+  Input,
+  Tabs,
+  type TabItem,
+} from "../components/ui";
 import { formatDateTime } from "../mockup/format";
 import { mockupAuditEvents } from "../mockup/lofi-data";
 
@@ -28,6 +35,18 @@ function outcomeTone(outcome: "success" | "warning" | "danger" | "neutral") {
   return "neutral" as const;
 }
 
+function eventDomainKind(domain: "Requests" | "Secrets" | "Agents") {
+  if (domain === "Requests") {
+    return "request" as const;
+  }
+
+  if (domain === "Secrets") {
+    return "secret" as const;
+  }
+
+  return "agent" as const;
+}
+
 export function AuditLogPage() {
   const [filter, setFilter] = useState<AuditFilter>("all");
   const [query, setQuery] = useState("");
@@ -50,25 +69,19 @@ export function AuditLogPage() {
 
   return (
     <section className="flex flex-col gap-4 xl:h-full xl:min-h-0">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-            Audit Log
-          </p>
-          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-            Reconstruct what happened without opening every event.
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--color-text-muted)]">
-            Audit history stays compact and timeline-first so operators can
-            understand sequence, actor, target, and impact at a glance.
-          </p>
-        </div>
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
-            Visible events
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text)]">
-            {items.length}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text)]">
+              Audit Log
+            </p>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
+              Visible {items.length}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Timeline-first history keeps sequence, actor, target, and outcome
+            visible without opening every event.
           </p>
         </div>
       </header>
@@ -101,9 +114,9 @@ export function AuditLogPage() {
               className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-[180px_minmax(0,1fr)]"
             >
               <div className="text-xs text-[var(--color-text-subtle)]">
-                <p className="font-semibold uppercase tracking-[0.14em]">
+                <EntityBadge kind={eventDomainKind(event.domain)}>
                   {event.domain}
-                </p>
+                </EntityBadge>
                 <p className="mt-2 text-sm font-medium text-[var(--color-text)]">
                   {formatDateTime(event.at)}
                 </p>

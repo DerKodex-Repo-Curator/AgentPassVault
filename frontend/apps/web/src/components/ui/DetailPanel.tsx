@@ -17,15 +17,8 @@ interface DetailPanelSectionProps extends HTMLAttributes<HTMLElement> {
 }
 
 function toneAccentClass(tone: DetailPanelTone) {
-  if (tone === "requests") {
-    return "bg-[var(--color-domain-requests-strong)] text-[var(--color-domain-requests-text)]";
-  }
-
-  if (tone === "secrets") {
-    return "bg-[var(--color-domain-secrets-strong)] text-[var(--color-domain-secrets-text)]";
-  }
-
-  return "bg-[var(--color-domain-agents-strong)] text-[var(--color-domain-agents-text)]";
+  void tone;
+  return "bg-[var(--color-accent-strong)] text-[var(--color-accent-text)]";
 }
 
 export function DetailPanel({
